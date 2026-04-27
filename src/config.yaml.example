@@ -1,0 +1,6 @@
+database:
+  host: "your-host.mysql.rds.aliyuncs.com"
+  port: 3306
+  username: "your-username"
+  password: "your-password"
+  name: "tennis"

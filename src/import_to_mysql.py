@@ -115,7 +115,7 @@ def read_csv(filepath: str) -> list:
     raise ValueError(f"无法读取 CSV 文件，尝试了编码: {encodings}")
 
 
-def import_to_mysql(records: list, dry_run: bool = True, clear_existing: bool = False):
+def import_to_mysql(records: list, dry_run: bool = True, clear_existing: bool = False, truncate: bool = False):
     """导入数据到 MySQL"""
     conn = get_connection()
     try:
@@ -123,6 +123,11 @@ def import_to_mysql(records: list, dry_run: bool = True, clear_existing: bool = 
             if clear_existing and not dry_run:
                 affected = cursor.execute("UPDATE court SET deleted_at = NOW() WHERE deleted_at IS NULL")
                 print(f"  Soft-deleted {affected} existing records")
+                conn.commit()
+
+            if truncate and not dry_run:
+                cursor.execute("TRUNCATE TABLE court")
+                print("  Truncated court table (AUTO_INCREMENT reset)")
                 conn.commit()
 
             valid_count = 0
@@ -201,6 +206,8 @@ def main():
                         help="直接确认，无需交互输入")
     parser.add_argument("--clear-existing", action="store_true", default=False,
                         help="导入前先软删除现有数据 (设置 deleted_at)")
+    parser.add_argument("--truncate", action="store_true", default=False,
+                        help="导入前先清空 court 表并重置自增 ID")
     parser.add_argument("--file", default="output/court_normalized.csv",
                         help="CSV 文件路径 (相对于 src 目录)")
 
@@ -222,11 +229,11 @@ def main():
                 return
         else:
             print("[AUTO CONFIRM] --yes flag specified")
-        import_to_mysql(records, dry_run=False, clear_existing=args.clear_existing)
+        import_to_mysql(records, dry_run=False, clear_existing=args.clear_existing, truncate=args.truncate)
     else:
         print("[DRY RUN MODE] Only preview, no actual import")
         print("Use --execute flag to actually import\n")
-        import_to_mysql(records, dry_run=True, clear_existing=args.clear_existing)
+        import_to_mysql(records, dry_run=True, clear_existing=args.clear_existing, truncate=args.truncate)
 
 
 if __name__ == "__main__":

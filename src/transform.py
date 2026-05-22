@@ -10,39 +10,76 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 from geocoding import geocode_address
 
-# 北京区域预设映射
+# 区域预设映射 (来源: 民政部 2024 行政区划代码, 拆分为两位)
 REGION_MAPPING = {
-    "朝阳": {"province_id": 1, "city_id": 2, "district_id": 5},
-    "海淀": {"province_id": 1, "city_id": 2, "district_id": 8},
-    "东城": {"province_id": 1, "city_id": 2, "district_id": 2},
-    "西城": {"province_id": 1, "city_id": 2, "district_id": 3},
-    "丰台": {"province_id": 1, "city_id": 2, "district_id": 6},
-    "石景山": {"province_id": 1, "city_id": 2, "district_id": 7},
-    "通州": {"province_id": 1, "city_id": 2, "district_id": 12},
-    "昌平": {"province_id": 1, "city_id": 2, "district_id": 14},
-    "大兴": {"province_id": 1, "city_id": 2, "district_id": 18},
-    "房山": {"province_id": 1, "city_id": 2, "district_id": 19},
-    "顺义": {"province_id": 1, "city_id": 2, "district_id": 13},
-    "门头沟": {"province_id": 1, "city_id": 2, "district_id": 9},
-    "怀柔": {"province_id": 1, "city_id": 2, "district_id": 16},
-    "平谷": {"province_id": 1, "city_id": 2, "district_id": 17},
-    "密云": {"province_id": 1, "city_id": 2, "district_id": 15},
-    "延庆": {"province_id": 1, "city_id": 2, "district_id": 20},
+    # 北京 (province=11, city=01)
+    "东城":   {"province_id": 11, "city_id": 1, "district_id": 1},
+    "西城":   {"province_id": 11, "city_id": 1, "district_id": 2},
+    "朝阳":   {"province_id": 11, "city_id": 1, "district_id": 5},
+    "丰台":   {"province_id": 11, "city_id": 1, "district_id": 6},
+    "石景山": {"province_id": 11, "city_id": 1, "district_id": 7},
+    "海淀":   {"province_id": 11, "city_id": 1, "district_id": 8},
+    "门头沟": {"province_id": 11, "city_id": 1, "district_id": 9},
+    "房山":   {"province_id": 11, "city_id": 1, "district_id": 11},
+    "通州":   {"province_id": 11, "city_id": 1, "district_id": 12},
+    "顺义":   {"province_id": 11, "city_id": 1, "district_id": 13},
+    "昌平":   {"province_id": 11, "city_id": 1, "district_id": 14},
+    "大兴":   {"province_id": 11, "city_id": 1, "district_id": 15},
+    "怀柔":   {"province_id": 11, "city_id": 1, "district_id": 16},
+    "平谷":   {"province_id": 11, "city_id": 1, "district_id": 17},
+    "密云":   {"province_id": 11, "city_id": 1, "district_id": 18},
+    "延庆":   {"province_id": 11, "city_id": 1, "district_id": 19},
+    # 上海 (province=31, city=01)
+    "黄浦":   {"province_id": 31, "city_id": 1, "district_id": 1},
+    "徐汇":   {"province_id": 31, "city_id": 1, "district_id": 4},
+    "长宁":   {"province_id": 31, "city_id": 1, "district_id": 5},
+    "静安":   {"province_id": 31, "city_id": 1, "district_id": 6},
+    "普陀":   {"province_id": 31, "city_id": 1, "district_id": 7},
+    "虹口":   {"province_id": 31, "city_id": 1, "district_id": 9},
+    "杨浦":   {"province_id": 31, "city_id": 1, "district_id": 10},
+    "闵行":   {"province_id": 31, "city_id": 1, "district_id": 12},
+    "宝山":   {"province_id": 31, "city_id": 1, "district_id": 13},
+    "嘉定":   {"province_id": 31, "city_id": 1, "district_id": 14},
+    "浦东":   {"province_id": 31, "city_id": 1, "district_id": 15},
+    "金山":   {"province_id": 31, "city_id": 1, "district_id": 16},
+    "松江":   {"province_id": 31, "city_id": 1, "district_id": 17},
+    "青浦":   {"province_id": 31, "city_id": 1, "district_id": 18},
+    "奉贤":   {"province_id": 31, "city_id": 1, "district_id": 20},
+    "崇明":   {"province_id": 31, "city_id": 1, "district_id": 51},
+    "浦东新": {"province_id": 31, "city_id": 1, "district_id": 15},
 }
 
 COVER_URL = "https://tennis.52emo.com/court/1768728941013gl3HCxVWEY.webp"
 
-# 配套设施关键词映射
+# 配套设施关键词 → config_name 映射
 FACILITY_KEYWORDS = {
-    "shower": ["淋浴", "有淋浴间"],
-    "toilet": ["卫生间", "有卫生间"],
-    "locker": ["储物柜", "有储物柜"],
-    "rest_area": ["休息区", "有休息区"],
-    "ac": ["空调", "空调开放"],
-    "no_smoke": ["无烟环境"],
+    "store": ["有储物柜", "寄存柜", "储物柜"],
+    "no_smoking": ["无烟环境"],
+    "lounge": ["有休息区", "休息区", "休息长椅"],
+    "ac": ["空调开放"],
+    "restroom": ["有卫生间", "卫生间", "公共卫生间"],
+    "change": ["更衣室"],
     "heating": ["暖气"],
-    "locker_room": ["更衣室"],
-    "parking": ["停车", "免费停车"],
+    "rent": ["训练服", "球拍", "器材租赁"],
+    "shower": ["有淋浴间", "淋浴"],
+    "free_food": ["免费点心", "免费茶水"],
+    "parking": ["免费停车"],
+    "shop": ["饮品售卖", "饮品区"],
+}
+
+FACILITY_ICONS = {
+    "shower": "https://static.poptennis.com.cn/court/icon/shower.webp",
+    "parking": "https://static.poptennis.com.cn/court/icon/parking.webp",
+    "rent": "https://static.poptennis.com.cn/court/icon/rent.webp",
+    "change": "https://static.poptennis.com.cn/court/icon/change.webp",
+    "ac": "https://static.poptennis.com.cn/court/icon/ac.webp",
+    "store": "https://static.poptennis.com.cn/court/icon/store.webp",
+    "shop": "https://static.poptennis.com.cn/court/icon/shop.webp",
+    "no_smoking": "https://static.poptennis.com.cn/court/icon/no_smoking.webp",
+    "lounge": "https://static.poptennis.com.cn/court/icon/lounge.webp",
+    "restroom": "https://static.poptennis.com.cn/court/icon/restroom.webp",
+    "heating": "https://static.poptennis.com.cn/court/icon/heating.webp",
+    "free_food": "https://static.poptennis.com.cn/court/icon/free_food.webp",
 }
 
 
@@ -73,17 +110,17 @@ def parse_court_count(text: str) -> int:
 
 
 def parse_facilities(text: str) -> dict:
-    """将配套设施文本转换为 JSON 对象"""
+    """将配套设施文本转换为 JSON 对象，key=config_name, value=icon_url"""
     if not text:
         return {}
 
     facilities = {}
     text = text.replace("\n", " ").replace("\r", " ")
 
-    for key, keywords in FACILITY_KEYWORDS.items():
+    for config_name, keywords in FACILITY_KEYWORDS.items():
         for kw in keywords:
             if kw in text:
-                facilities[key] = 1
+                facilities[config_name] = FACILITY_ICONS.get(config_name, "")
                 break
 
     return facilities
@@ -106,7 +143,7 @@ def extract_phone(text: str) -> str:
 
 def process_row(row_data: dict, geocode_cache: dict) -> dict:
     """处理一行数据，转换为 court 表格式"""
-    region = row_data.get("区域", "").strip()
+    region = row_data.get("区", "").strip().rstrip("区")
     region_info = REGION_MAPPING.get(region, {"province_id": 1, "city_id": 2, "district_id": 0})
 
     # name: 换行符替换为空格
@@ -114,7 +151,7 @@ def process_row(row_data: dict, geocode_cache: dict) -> dict:
     name = name.replace("\n", " ").replace("\r", " ")
 
     # address: 换行符替换为空格，清理特殊字符
-    address = row_data.get("位置", "").strip()
+    address = row_data.get("地址", "").strip()
     address = address.replace("\n", " ").replace("\r", " ")
     address = re.sub(r'[<>]', '', address)
 
@@ -122,10 +159,13 @@ def process_row(row_data: dict, geocode_cache: dict) -> dict:
     contact_number = extract_phone(row_data.get("电话", ""))
 
     # 经纬度处理
+    city = row_data.get("城市", "").strip()
+    district = row_data.get("区", "").strip()
+    geocode_addr = city + district + address
     lat, lng = 0.0, 0.0
-    cache_key = address
+    cache_key = geocode_addr
     if cache_key not in geocode_cache:
-        lat, lng = geocode_address(address)
+        lat, lng = geocode_address(geocode_addr, city=city)
         geocode_cache[cache_key] = (lat, lng)
     else:
         lat, lng = geocode_cache[cache_key]
@@ -140,10 +180,39 @@ def process_row(row_data: dict, geocode_cache: dict) -> dict:
     facilities_text = row_data.get("配套设施", "")
     facilities = parse_facilities(facilities_text)
 
-    # court_types: 有室内场地=1，有室外场地=0
-    court_types = 1
-    if indoor_count == 0 and outdoor_count > 0:
-        court_types = 0
+    # court_types: 根据硬地/红土/草地列构建
+    hard_count = parse_court_count(row_data.get("硬地", ""))
+    clay_count = parse_court_count(row_data.get("红土", ""))
+    grass_count = parse_court_count(row_data.get("草地", ""))
+    court_types_list = []
+    if hard_count > 0:
+        court_types_list.append(0)
+    if clay_count > 0:
+        court_types_list.append(1)
+    if grass_count > 0:
+        court_types_list.append(2)
+    if not court_types_list:
+        court_types_list = [0]
+    court_types = json.dumps(court_types_list, ensure_ascii=False)
+
+    # court_qty: 室内 + 室外
+    court_qty = indoor_count + outdoor_count
+
+    # is_indoor: JSON数组，室内+室外
+    is_indoor = []
+    if indoor_count > 0:
+        is_indoor.append(1)
+    if outdoor_count > 0:
+        is_indoor.append(0)
+    if not is_indoor:
+        is_indoor = [1]
+    is_indoor_json = json.dumps(is_indoor, ensure_ascii=False)
+
+    # opening_hours: JSON数组
+    hours_text = parse_opening_hours(row_data.get("营业时间", ""))
+    opening_hours = json.dumps([
+        {"weekdays": [1, 2, 3, 4, 5, 6, 7], "start_time": hours_text.split(" - ")[0], "end_time": hours_text.split(" - ")[1]}
+    ], ensure_ascii=False)
 
     return {
         "name": name,
@@ -155,10 +224,11 @@ def process_row(row_data: dict, geocode_cache: dict) -> dict:
         "latitude": lat,
         "longitude": lng,
         "contact_number": contact_number,
-        "opening_hours": parse_opening_hours(row_data.get("营业时间", "")),
+        "opening_hours": opening_hours,
         "court_types": court_types,
-        "is_indoor": 1,
+        "is_indoor": is_indoor_json,
         "facilities": json.dumps(facilities, ensure_ascii=False),
+        "court_qty": court_qty,
         "base_price": random.randint(100, 200),
         "description": "这里不错",
         "rating": 0.0,
@@ -216,7 +286,7 @@ def write_output_csv(records: list, output_path: str):
         "name", "cover", "province_id", "city_id", "district_id",
         "address", "latitude", "longitude", "contact_number",
         "opening_hours", "court_types", "is_indoor", "facilities",
-        "base_price", "description", "rating", "enrolling_count", "status"
+        "court_qty", "base_price", "description", "rating", "enrolling_count", "status"
     ]
 
     with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
@@ -226,7 +296,7 @@ def write_output_csv(records: list, output_path: str):
 
 
 def main():
-    input_path = os.path.join(os.path.dirname(__file__), "..", "data", "input.csv")
+    input_path = os.path.join(os.path.dirname(__file__), "..", "data", "input2.csv")
     output_dir = os.path.join(os.path.dirname(__file__), "output")
     output_path = os.path.join(output_dir, "court_normalized.csv")
 

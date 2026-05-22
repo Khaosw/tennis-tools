@@ -21,10 +21,11 @@ COURT_FIELDS = {
     "longitude": {"type": float, "required": True, "default": 0.0},
     "geo_point": {"type": str, "required": True, "default": None},
     "contact_number": {"type": str, "required": True, "default": ""},
-    "opening_hours": {"type": str, "required": True, "default": "08:00 - 22:00"},
-    "court_types": {"type": int, "required": True, "default": 1},
-    "is_indoor": {"type": int, "required": True, "default": 1},
+    "opening_hours": {"type": str, "required": True, "default": '[{"weekdays": [1,2,3,4,5,6,7], "start_time": "08:00", "end_time": "18:00"}]'},
+    "court_types": {"type": str, "required": True, "default": "[0]"},
+    "is_indoor": {"type": str, "required": True, "default": "[1]"},
     "facilities": {"type": str, "required": True, "default": "{}"},
+    "court_qty": {"type": int, "required": True, "default": 0},
     "base_price": {"type": int, "required": True, "default": 120},
     "description": {"type": str, "required": False, "default": ""},
     "rating": {"type": float, "required": True, "default": 0.0},
@@ -114,11 +115,16 @@ def read_csv(filepath: str) -> list:
     raise ValueError(f"无法读取 CSV 文件，尝试了编码: {encodings}")
 
 
-def import_to_mysql(records: list, dry_run: bool = True):
+def import_to_mysql(records: list, dry_run: bool = True, clear_existing: bool = False):
     """导入数据到 MySQL"""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
+            if clear_existing and not dry_run:
+                affected = cursor.execute("UPDATE court SET deleted_at = NOW() WHERE deleted_at IS NULL")
+                print(f"  Soft-deleted {affected} existing records")
+                conn.commit()
+
             valid_count = 0
             error_count = 0
             skipped_count = 0
@@ -193,6 +199,8 @@ def main():
                         help="实际执行导入 (需要此参数)")
     parser.add_argument("--yes", action="store_true", default=False,
                         help="直接确认，无需交互输入")
+    parser.add_argument("--clear-existing", action="store_true", default=False,
+                        help="导入前先软删除现有数据 (设置 deleted_at)")
     parser.add_argument("--file", default="output/court_normalized.csv",
                         help="CSV 文件路径 (相对于 src 目录)")
 
@@ -214,11 +222,11 @@ def main():
                 return
         else:
             print("[AUTO CONFIRM] --yes flag specified")
-        import_to_mysql(records, dry_run=False)
+        import_to_mysql(records, dry_run=False, clear_existing=args.clear_existing)
     else:
         print("[DRY RUN MODE] Only preview, no actual import")
         print("Use --execute flag to actually import\n")
-        import_to_mysql(records, dry_run=True)
+        import_to_mysql(records, dry_run=True, clear_existing=args.clear_existing)
 
 
 if __name__ == "__main__":
